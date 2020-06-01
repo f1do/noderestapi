@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { auth, db, firebase } from "@/db/firebase";
+import { auth, firebase } from "@/db/firebase";
 
 export default {
   name:'Acceso',
@@ -100,24 +100,16 @@ export default {
     }
   },
   methods: {
-    onSubmit() {
-      alert(JSON.stringify({usuario:this.usuario, password: this.password}))
-      auth.signInWithEmailAndPassword(this.usuario, this.password)
-      .then(function(result) {
-
-        result.user.getIdToken(true).then(function(idToken) {
-          console.log(idToken);
-        }).catch(function(error) {
-          console.log('Error: ', error);
+    async onSubmit() {
+      try {
+        const result = await auth.signInWithEmailAndPassword(this.usuario, this.password);
+        this.$router.push({name:'Main'}).catch((err) => {
+          if(err) console.log(`Problem handling something: ${err}.`);
         });
-      })
-      .catch(function(error) {
-        if(error){
-          alert(error.message);
-          return;
-        }
-      });
 
+      } catch (err) {
+        console.log('Error: ', err);
+      }
     },
     onReset() {
       this.usuario = '';

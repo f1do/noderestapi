@@ -1,26 +1,26 @@
 <template>
     <b-container>
         <h1 class="text-center mb-3">Registro</h1>
-        <div>
+        <div v-if="!carga">
           <b-card bg-variant="dark" text-variant="light" class="overflow-hidden card-body bg-light" >
             <b-row no-gutters>
               <b-col md="7" class="ml-2" >
                 <b-form @submit.prevent="onSubmit" @reset.prevent="onReset" v-if="show" class="my-3">
                   <b-row>
                       <b-col md="6">
-                          <b-form-group
-                            id="fieldset-1"
-                            label="Ingresa tu email"
-                            label-for="input-1"
-                            :invalid-feedback="validaEmail"
-                            :valid-feedback="emailValido"
-                            :state="emailStatus">
+                        <b-form-group
+                            id="fieldset-3"
+                            label="Nombre"
+                            label-for="input-3"
+                            :invalid-feedback="validaNombre"
+                            :valid-feedback="nombreValido"
+                            :state="nombreStatus">
                             <b-form-input
-                                type="email"
-                                v-model.trim="$v.email.$model"
-                                :state="emailStatus" 
-                                id="input-1"
+                                v-model.trim="nombre"
+                                :state="nombreStatus" 
+                                id="input-3"
                                 tabindex="1"
+                                :placeholder="sugiereNombre"
                                 required/>
                         </b-form-group>
 
@@ -43,19 +43,19 @@
                         </b-form-group>
                       </b-col>
                       <b-col md="6">
-                          <b-form-group
-                            id="fieldset-3"
-                            label="Crea tu usuario"
-                            label-for="input-3"
-                            :invalid-feedback="validaUsuario"
-                            :valid-feedback="usuarioValido"
-                            :state="usuarioStatus">
+                        <b-form-group
+                            id="fieldset-1"
+                            label="Ingresa tu email"
+                            label-for="input-1"
+                            :invalid-feedback="validaEmail"
+                            :valid-feedback="emailValido"
+                            :state="emailStatus">
                             <b-form-input
-                                v-model.trim="usuario"
-                                :state="usuarioStatus" 
-                                id="input-3"
+                                type="email"
+                                v-model.trim="$v.email.$model"
+                                :state="emailStatus" 
+                                id="input-1"
                                 tabindex="2"
-                                :placeholder="sugiereUsuario"
                                 required/>
                         </b-form-group>
 
@@ -92,7 +92,7 @@
                         <b-button class="btn-block" 
                           v-for="(p, index) in proveedores"
                           :key="p"
-                          @click="google" 
+                          @click="registrarConProveedor(p.split('|')[0])" 
                           :variant="p.split('|')[1]" 
                           :tabindex="7 + index">{{p.split('|')[0]}}</b-button>
                       </b-col>
@@ -103,28 +103,33 @@
             </b-row>
           </b-card>
         </div>
+        <div v-if="carga" class="mx-auto" style="width:400px">
+          <h3>Comunicando con el servidor</h3>
+          <hr/>
+          <sync-loader :loading="carga" ></sync-loader>
+        </div>
     </b-container>
 </template>
 
 <script>
 import { required, email, sameAs, minLength } from 'vuelidate/lib/validators'
 import passwordComplex from '../validaciones/index'
-import { mapActions } from "vuex";
+import { mapActions, mapState } from "vuex";
 import { Registro, Providers } from '../hard-code/index'
-import { v4 as uuidv4 } from 'uuid';
-import { auth, db, firebase } from "@/db/firebase";
+import { auth, firebase } from "@/db/firebase";
+import SyncLoader from 'vue-spinner/src/SyncLoader'
 
 export default {
   name:'Registro',
   data() {
     return {
-      usuario: '',
+      nombre: '',
       email: '',
       password: '',
       confirmacion:'',
       show: true,
-      textos: Registro(),
-      proveedores: Providers()
+      textos: Registro,
+      proveedores: Providers
       }
   },
   validations:{
@@ -142,8 +147,9 @@ export default {
     }
   },
   computed:{
-    usuarioStatus(){
-        return this.usuario.length >= 4;
+    ...mapState('registro', ['error', 'carga']),
+    nombreStatus(){
+        return this.nombre.length >= 4;
     },
     passwordStatus(){
         return this.$v.password.passwordComplex && this.$v.password.minLength;
@@ -154,13 +160,13 @@ export default {
     confirmacionStatus(){
       return this.$v.confirmacion.sameAsPassword && this.confirmacion.length > 0;
     },
-    validaUsuario(){
-      if (!this.usuarioStatus) {
-        return this.textos.Valida.Usuario;
+    validaNombre(){
+      if (!this.nombreStatus) {
+        return this.textos.Valida.Nombre;
       } 
     },
-    usuarioValido() {
-      return this.usuarioStatus === true ? this.textos.Okay : '';
+    nombreValido() {
+      return this.nombreStatus === true ? this.textos.Okay : '';
     },
     passwordValido() {
       return this.passwordStatus === true ? this.textos.Okay : '';
@@ -189,27 +195,34 @@ export default {
         return this.textos.Valida.Confirmacion;
       }
     },
-    sugiereUsuario(){
+    sugiereNombre(){
       return this.email.split('@')[0];
     }
   },
   methods: {
-    ...mapActions(['crearUsuario']),
-    onSubmit() {
+    ...mapActions('registro', ['crearUsuario']),
+    ...mapActions(['firmarUsuario']),
+    async onSubmit() {
 
       const user ={
-        uid: uuidv4(),
-        nombre: this.usuario,
+        name: this.nombre,
         email: this.email,
-        password: this.password,
-        imagen: ''
+        password: this.password
       };
 
-      this.crearUsuario(user);
+      const result = await this.crearUsuario(user);
+      if(result.ok){
+        this.firmarUsuario(result.user);
+        setTimeout(()=>{
+          this.$router.push({name:'Main'}).catch((err) => {
+            if(err) console.log(`Problem handling something: ${err}.`);
+          });
+        }, 2000);
+      }
+      this.enviaMensaje('success');
     },
     onReset() {
-      this.usuario = this.password = this.email = this.confirmacion = '';
-      // Trick to reset/clear native browser form validation state
+      this.nombre = this.password = this.email = this.confirmacion = '';
       this.show = false
       this.$nextTick(() => {
           this.show = true
@@ -217,29 +230,9 @@ export default {
     },
     async registrarConProveedor(proveedor){
       switch(proveedor){
-        case this.proveedores[0]: google(); break;
+        case this.proveedores[0].split('|')[0]: this.google(); break;
         // case this.proveedores[0]: google(); break;
         // case this.proveedores[0]: google(); break;
-      }
-    },
-    async emailAndPassword(){
-      try {
-
-        const result = await auth.createUserWithEmailAndPassword(this.email, this.password);
-        const user ={
-          uid: uuidv4(),
-          nombre: this.usuario,
-          email: this.email,
-          imagen: ''
-        };
-
-        this.dbResult(user);
-
-      } catch (error) {
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        console.log(errorMessage);
       }
     },
     async google(){
@@ -249,16 +242,26 @@ export default {
       try{
         
         const result = await auth.signInWithPopup(provider);
-        var token = result.credential.accessToken;
+        //var token = result.credential.accessToken;
 
         const user = {
           uid: result.user.uid,
-          nombre: result.user.displayName,
+          name: result.user.displayName,
           email: result.user.email,
-          imagen: result.user.photoURL
+          imagen: result.user.photoURL,
+          //token
         };
         
-        this.dbResult(user);
+        const usuario = await this.crearUsuario(user);
+        if(usuario.ok){
+          this.firmarUsuario(usuario.user);
+          setTimeout(()=>{
+            this.$router.push({name:'Main'}).catch((err) => {
+              if(err) console.log(`Problem handling something: ${err}.`);
+            });
+          }, 2000);
+        }
+        this.enviaMensaje('success');
       }
       catch(error) {
         // Handle Errors here.
@@ -275,26 +278,16 @@ export default {
       };
     },
     enviaMensaje(variant = null) {
-      this.$bvToast.toast('El registro se completó exitosamente', {
+      variant = this.error ? 'danger' : variant;
+      this.$bvToast.toast(this.error ?? 'El registro se completó exitosamente', {
         title: `Variant ${variant || 'default'}`,
         variant: variant,
         solid: true
       })
-    },
-    dbResult(user){
-      db.collection(this.textos.uColeccion).doc(user.email).set(user)
-        .then(res=>{
-
-            console.log('Registro creado en DB');
-            this.enviaMensaje('success');
-            setTimeout(()=>{
-              this.$router.push({name:'Inicio'});
-            }, 3000);
-        })
-        .catch(err=>{
-          console.log(err);
-        });
     }
+  },
+  components:{
+    SyncLoader
   }
 }
 </script>

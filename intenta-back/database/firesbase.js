@@ -1,9 +1,9 @@
 import * as admin from 'firebase-admin';
-import serviceAccount from "../intenta-c06ab-firebase-adminsdk-8yunu-a9d08389f7.json";
+import serviceAccount from "../intenta-ds-firebase-adminsdk-dlndn-4e832ac78a.json";
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://intenta-c06ab.firebaseio.com",
+    databaseURL: "https://intenta-ds.firebaseio.com",
     databaseAuthVariableOverride: null
   });
   

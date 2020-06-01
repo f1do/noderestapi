@@ -9,7 +9,7 @@ const Registro = {
     uColeccion: 'usuarios',
     Okay: 'Parece estar bien.',
     Valida:{
-        Usuario:'Ingresa un usuario',
+        Nombre:'Ingresa tu nombre',
         Password: 'Ingresa tu contraseña',
         Email: 'Ingresa un email valido',
         Confirmacion: 'El texto ingresado no coincide con el password.',
@@ -17,6 +17,4 @@ const Registro = {
     }
 };
 
-exports.Acceso = ()=> Acceso;
-exports.Registro = ()=> Registro;
-exports.Providers = ()=> Providers;
+module.exports = {Acceso, Registro, Providers};

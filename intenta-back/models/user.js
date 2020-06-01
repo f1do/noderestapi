@@ -6,34 +6,36 @@ const saltRounds = 10;
 const _ = require('underscore');
 const fields = ['name', 'email', 'role', 'password', 'active'];
 
-export default (n)=>{
+export default ()=>{
     return {
-        getUser:{
-            name: n.name,
-            email: n.email,
-            role: n.role,
-            password: n.password != null ? bcrypt.hashSync(n.password, saltRounds) : null,
-            active: n.active != null && 
-                    (n.active === true || n.active === 'true' || n.active === 1 || n.active === "1"),
-            created: admin.database.ServerValue.TIMESTAMP
+        getUser(u){
+            if(u === undefined) return {};
+            return {
+                name: u.name,
+                email: u.email,
+                role: u.role ?? 'USER_ROLE',
+                password: u.password != null ? bcrypt.hashSync(u.password, saltRounds) : null,
+                active:  !(u.active === false || u.active === 'false' || u.active === 0 || u.active === "0"),
+                created: u.created === undefined ? admin.firestore.FieldValue.serverTimestamp() : u.created
+            };
         },
-        getDBuser(id){
-            var user = {};
-            user[id] = this.deleteSensibleData();
-            return user;
+        getDBuser(id, user){
+            var _user = {};
+            _user[id] = this.deleteSensibleData(user);
+            return _user;
         },
-        updateduser(_user){
-            for (let prop in _.pick(n, fields)){
+        updateduser(_user, user){
+            for (let prop in _.pick(user, fields)){
                 if(prop){
-                    _user[prop] = prop == 'password' ? this.getUser[prop] : n[prop];
+                    _user[prop] = prop == 'password' ? this.getUser(user)[prop] : user[prop];
                 }
             }
             return _user;
         },
-        deleteSensibleData(){
-            delete this.getUser.created;
-            delete this.getUser.password;
-            return this.getUser;
+        deleteSensibleData(user){
+            delete user.created;
+            delete user.password;
+            return user;
         }
     };
 };

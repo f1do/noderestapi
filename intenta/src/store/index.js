@@ -1,60 +1,58 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { auth, db, firebase } from "@/db/firebase";
+import { auth } from "@/db/firebase";
+import registro from "../modules/registro";
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    usuario:{},
-    error:''
+    usuario: {},
+    error: undefined,
+    token: ''
   },
   mutations: {
     nuevoUsuario(state, pl){
       state.usuario = pl;
+      state.error = undefined;
     },
     nuevoError(state, pl){
       state.error = pl;
+    },
+    establecerToken(state, pl){
+      state.token = pl;
     }
   },
   actions: {
-    crearUsuario({commit}, pl){
-      console.log('User: ', pl);
-      auth.createUserWithEmailAndPassword(pl.email, pl.password)
-      .then(res=>{
+    async firmarUsuario({commit, state}, user){
 
-        const user ={
-          uid: res.user.uid,
-          nombre: pl.usuario,
-          email: res.user.email,
-          imagen: pl.imagen
-        };
+      if(!user.name){
+        await this.dispatch('leerToken');
 
-        auth.currentUser.getIdToken(true).then(function(idToken) {
-          console.log(idToken);
-        }).catch(function(error) {
-          console.log('Error: ', error);
-        });
-  
-        commit('nuevoUsuario', usuario);
-      })
-      .catch(err=> {
-        console.log(err);
-        commit('nuevoError', err.message);
-      });
-      
+        let config = {
+          headers: {
+            token: state.token
+          }
+        }
+
+        const usr = await Vue.axios.get(`user/${user.uid}`, config);
+        if(usr != null && usr.data && usr.data.result === 'Success'){
+          user = usr.data.message[user.uid];
+        }
+      }
+
+      commit('nuevoUsuario', user);
     },
-    firmarUsuario({commit}, user){
-      const _user = {
-        uid: user.uid,
-        nombre: user.displayName,
-        email: user.email,
-        imagen: user.photoURL
-      };
-
-      commit('nuevoUsuario', _user);
+    async leerToken({commit}){
+      try {
+        let idToken = await auth.currentUser.getIdToken(true);
+        commit('establecerToken', idToken);
+      } catch (err) {
+        commit('nuevoError', err);
+      }
     }
   },
   modules: {
+    registro
   }
 })

@@ -19,22 +19,23 @@ const AuthPetition =(req,res,next)=>{
 
 };
 
-const ManagementRoles = (req, res, next)=>{
+const ManageRoles = async (req, res, next)=>{
     var email = req.user.email;
-    const ref = db.ref('users');
-    ref.orderByChild('email').equalTo(email).once("value", data => {
-        
-        if (data.exists() && data.val() != null &&
-            data.val()[Object.keys(data.val())].role === 'ADMIN') {
+    const ref = db.collection('users');
+    var usr = await ref.where('email', '==', email).get();
+    
+    if(usr.empty)
+    {
+        return res.status(401).json({
+            mensaje: 'Usuario no válido',
+            }
+        );
+    } 
+    
+    usr.forEach(doc => {
+        if(doc.data().role === 'ADMIN')
             next();
-        } 
-        else{
-            return res.status(401).json({
-                mensaje: 'Usuario no válido',
-                }
-            );
-        }
-    });
+      });
 };
 
-module.exports = {AuthPetition, ManagementRoles}
+module.exports = {AuthPetition, ManageRoles}
