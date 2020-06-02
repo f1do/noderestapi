@@ -10,9 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api', require('./routes/note'));
-app.use('/api', require('./routes/user'));
-app.use('/login', require('./routes/login'));
+app.use(require('./routes/index'));
 
 const history = require('connect-history-api-fallback');
 app.use(history());
