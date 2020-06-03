@@ -27,7 +27,7 @@ Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.config.productionTip = false
 axios.defaults.baseURL = 'http://localhost:3000/api';
 
-auth.onAuthStateChanged(function(user) {
+auth.onAuthStateChanged(user => {
     
     if (user) {
       const _user = {

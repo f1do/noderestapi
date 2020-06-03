@@ -1,5 +1,10 @@
 const Acceso = {
-    Bienvenido: 'Bienvenido'
+    Bienvenido: 'Bienvenido',
+    InputEmail:'Ingresar tu correo.',
+    Valida:{
+        Password: 'Ingresa tu contraseña',
+        Email: 'Ingresa un email valido'
+    }
 };
 
 const Providers=['GMAIL|danger', 'FACEBOOK|primary', 'TWITTER|info']

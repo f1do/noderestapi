@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { auth } from "@/db/firebase";
 import registro from "../modules/registro";
+import acceso from "../modules/acceso";
+import router from '../router'
 
 Vue.use(Vuex)
 
@@ -50,9 +52,22 @@ export default new Vuex.Store({
       } catch (err) {
         commit('nuevoError', err);
       }
+    },
+    async cierraSesion(){
+      try {
+        const logout = await auth.signOut();
+        router.push('/').catch((err) => {
+          if(err) console.log(`Hubo un problema al cerrar la sesión: ${err}.`);
+        });
+      } catch (err) {
+       console.log(`Hubo un problema al cerrar la sesion: ${err}.`); 
+      }
     }
   },
+  getters:{
+    
+  },
   modules: {
-    registro
+    registro, acceso
   }
 })

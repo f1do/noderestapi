@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { auth } from "@/db/firebase";
+import router from '../router'
 
 export default {
     namespaced: true,
@@ -44,6 +45,13 @@ export default {
                 const userDB = await Vue.axios.post('new-user', user);
                 if(userDB.data.result && userDB.data.result === 'Success'){
                     commit('nuevoUsuario', user);
+
+                    setTimeout(()=>{
+                        router.push({name:'Main'}).catch((err) => {
+                            if(err) console.log(`Hubo un problema al cerrar la sesión: ${err}.`);
+                        });
+                    }, 2000);
+
                     return {ok:true, user};
                 }
                 

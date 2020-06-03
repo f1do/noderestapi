@@ -36,8 +36,8 @@
 
 
 <script>
-import {auth} from '@/db/firebase';
-import { mapState } from "vuex";
+import { auth } from "@/db/firebase";
+import { mapState, mapActions, mapGetters } from "vuex";
 export default{
   name:'App',
   data(){
@@ -47,21 +47,12 @@ export default{
     }
   },
   methods:{
-    async cierraSesion(){
-      try {
-        const logout = await auth.signOut();
-        this.$router.push({name:'/'}).catch((err) => {
-          if(err) console.log(`Problem handling something: ${err}.`);
-        });
-      } catch (err) {
-       console.log(`Problem handling something: ${err}.`); 
-      }
-    }
+    ...mapActions(['cierraSesion'])
   },
   computed:{
     ...mapState(['usuario']),
     isCurrentlyLogedin(){
-      return auth.currentUser!=null;
+      return auth.currentUser != null;
     }
   }
 }

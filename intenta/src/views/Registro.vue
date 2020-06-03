@@ -45,7 +45,7 @@
                       <b-col md="6">
                         <b-form-group
                             id="fieldset-1"
-                            label="Ingresa tu email"
+                            :label="textos.Valida.Email"
                             label-for="input-1"
                             :invalid-feedback="validaEmail"
                             :valid-feedback="emailValido"
@@ -79,7 +79,8 @@
                       </b-col>
                   </b-row>
 
-                  <b-button type="submit" variant="secondary" class="mr-2" tabindex="5">Entrar</b-button>
+                  <b-button type="submit"
+                            variant="secondary" class="mr-2" tabindex="5">Entrar</b-button>
                   <b-button type="reset" variant="danger" tabindex="6">Limpiar</b-button>
                 </b-form>
               </b-col>
@@ -203,23 +204,17 @@ export default {
     ...mapActions('registro', ['crearUsuario']),
     ...mapActions(['firmarUsuario']),
     async onSubmit() {
+      if(this.confirmacionStatus && this.passwordStatus && this.emailStatus && this.nombreStatus){
 
-      const user ={
-        name: this.nombre,
-        email: this.email,
-        password: this.password
-      };
+        const user ={
+          name: this.nombre,
+          email: this.email,
+          password: this.password
+        };
 
-      const result = await this.crearUsuario(user);
-      if(result.ok){
-        this.firmarUsuario(result.user);
-        setTimeout(()=>{
-          this.$router.push({name:'Main'}).catch((err) => {
-            if(err) console.log(`Problem handling something: ${err}.`);
-          });
-        }, 2000);
+        const result = await this.crearUsuario(user);
+        this.enviaMensaje('success');
       }
-      this.enviaMensaje('success');
     },
     onReset() {
       this.nombre = this.password = this.email = this.confirmacion = '';
@@ -253,14 +248,6 @@ export default {
         };
         
         const usuario = await this.crearUsuario(user);
-        if(usuario.ok){
-          this.firmarUsuario(usuario.user);
-          setTimeout(()=>{
-            this.$router.push({name:'Main'}).catch((err) => {
-              if(err) console.log(`Problem handling something: ${err}.`);
-            });
-          }, 2000);
-        }
         this.enviaMensaje('success');
       }
       catch(error) {

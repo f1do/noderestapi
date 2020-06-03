@@ -2,7 +2,7 @@
     <b-container>
         <h1 class="text-center mb-3">Bienvenido</h1>
 
-        <div>
+        <div v-if="!carga">
           <b-card class="overflow-hidden card-body bg-light" >
             <b-row no-gutters>
               <b-col></b-col>
@@ -10,17 +10,17 @@
                 <b-form @submit.prevent="onSubmit" @reset.prevent="onReset" v-if="show" class="my-3">
                   <b-form-group
                     id="fieldset-1"
-                    :description="mensajeInputUsuario"
-                    label="Ingresa tu usuario"
+                    :description="textos.InputEmail"
+                    :label="textos.InputEmail"
                     label-for="input-1"
-                    :invalid-feedback="validaUsuario"
-                    :valid-feedback="usuarioValido"
-                    :state="userStatus">
+                    :invalid-feedback="validaEmail"
+                    :valid-feedback="emailValido"
+                    :state="emailStatus">
                       <b-form-input
-                          v-model.trim="usuario"
-                          :state="userStatus" 
+                          v-model.trim="$v.email.$model"
+                          :state="emailStatus" 
                           id="input-1"
-                          :placeholder="mensajeInputUsuario"
+                          :placeholder="textos.InputEmail"
                           required/>
                   </b-form-group>
 
@@ -44,81 +44,107 @@
               </b-col>
               <b-col class="border-right"></b-col>
               <b-col md="4">
-                <b-card-body class="text-center" title="Utiliza otro método">
+                 <b-card-body class="text-center" title="Utiliza otro método">
                   <b-card-text>
                     <b-row>
                       <b-col>
-                        <b-button class="btn-block" variant="danger">GMAIL</b-button>
-                        <b-button class="btn-block" variant="primary">FACEBOOK</b-button>
-                        <b-button class="btn-block" variant="dark">APPLE</b-button>
-                        <b-button class="btn-block" variant="info" >TWITTER</b-button>
+                        <b-button class="btn-block" 
+                          v-for="(p, index) in proveedores"
+                          :key="p"
+                          @click="registrarConProveedor(p.split('|')[0])" 
+                          :variant="p.split('|')[1]" 
+                          :tabindex="7 + index">{{p.split('|')[0]}}</b-button>
                       </b-col>
                     </b-row>
                   </b-card-text>
                 </b-card-body>
               </b-col>
-              <!-- <b-col></b-col> -->
             </b-row>
           </b-card>
+        </div>
+        <div v-if="carga" class="mx-auto" style="width:400px">
+          <h3>Comunicando con el servidor</h3>
+          <hr/>
+          <sync-loader :loading="carga" ></sync-loader>
         </div>
     </b-container>
 </template>
 
 <script>
 import { auth, firebase } from "@/db/firebase";
+import { mapActions, mapState } from "vuex";
+import { required, email } from 'vuelidate/lib/validators'
+import { Acceso, Providers } from '../hard-code/index'
+import SyncLoader from 'vue-spinner/src/SyncLoader'
 
 export default {
   name:'Acceso',
   data() {
     return {
-      mensajeInputUsuario: 'Puedes ingresar tu nick o tu correo.',
-      usuario: '',
+      email: '',
       password: '',
-      show: true
+      show: true,
+      textos: Acceso,
+      proveedores: Providers
     }
   },
+  validations:{
+    email:{ required, email }
+  },
   computed:{
+    ...mapState('acceso', ['carga']),
     userStatus(){
-      return this.usuario.length >= 4;
+      return this.email.length >= 4;
     },
-    validaUsuario(){
-      if (this.usuario.length > 4) {
-          return ''
-        } else if (this.usuario.length === 0) {
-          return 'Ingresa un usuario/email'
-        } 
+    validaEmail(){
+      if (!this.emailStatus) {
+        return this.textos.Valida.Email;
+      } 
     },
-    usuarioValido() {
-        return this.userStatus === true ? 'Parece estar bien.' : ''
+    emailValido() {
+      return this.emailStatus === true ? this.textos.Okay : '';
+    },
+    emailStatus(){
+        return this.$v.email.email && !this.$v.email.$error && this.email.length > 0;
     },
     validaPassword(){
-      if (this.password.length > 4) {
+      if (this.password.length > 5) {
           return ''
         } else if (this.password.length === 0) {
-          return 'Ingresa tu contraseña'
+          return this.textos.Valida.password;
         } 
     }
   },
   methods: {
+    ...mapActions('acceso', ['userLogin']),
     async onSubmit() {
       try {
-        const result = await auth.signInWithEmailAndPassword(this.usuario, this.password);
-        this.$router.push({name:'Main'}).catch((err) => {
-          if(err) console.log(`Problem handling something: ${err}.`);
-        });
-
+        await this.userLogin({email:this.email, password: this.password});
       } catch (err) {
         console.log('Error: ', err);
       }
     },
     onReset() {
-      this.usuario = '';
+      this.email = '';
       this.age = '';
       this.show = false
       this.$nextTick(() => {
         this.show = true
       })
+    },
+    async registrarConProveedor(proveedor){
+      switch(proveedor){
+        case this.proveedores[0].split('|')[0]: this.google(); break;
+        // case this.proveedores[0]: google(); break;
+        // case this.proveedores[0]: google(); break;
+      }
+    },
+    async google(){
+      console.log('Inicio con google.');
     }
+  },
+  components:{
+    SyncLoader
   }
 }
 </script>
